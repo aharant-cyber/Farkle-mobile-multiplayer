@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tavernen Farkle Online</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cinzel & MedievalSharp -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=MedievalSharp&display=swap" rel="stylesheet">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        wood: {
+                            800: '#2a160c',
+                            900: '#170a05',
+                            dark: '#0d0502',
+                        },
+                        parchment: {
+                            light: '#f7ebcf',
+                            DEFAULT: '#e5ce9e',
+                            dark: '#c19e67',
+                        },
+                        gold: {
+                            light: '#fef08a',
+                            DEFAULT: '#eab308',
+                            dark: '#a16207',
+                        }
+                    },
+                    fontFamily: {
+                        medieval: ['MedievalSharp', 'cursive'],
+                        cinzel: ['Cinzel', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'MedievalSharp', cursive;
+            background-color: #0d0502;
+            background-image: radial-gradient(circle at center, #261207 0%, #0d0502 100%);
+            color: #2a160c;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        .parchment-card {
+            background: #e5ce9e;
+            background-image: radial-gradient(#f7ebcf 20%, transparent 20%),
+                              radial-gradient(#c19e67 20%, transparent 20%);
+            background-size: 40px 40px;
+            background-position: 0 0, 20px 20px;
+            box-shadow: inset 0 0 20px rgba(50, 20, 5, 0.4), 0 8px 20px rgba(0,0,0,0.7);
+            border: 3px solid #6b3e19;
+        }
+
+        .wood-panel {
+            background: linear-gradient(145deg, #381a0e 0%, #1c0a04 100%);
+            border: 2px solid #572e12;
+            box-shadow: inset 0 0 12px rgba(0,0,0,0.9), 0 4px 10px rgba(0,0,0,0.6);
+        }
+
+        .btn-medieval {
+            background: linear-gradient(180deg, #d97706 0%, #854d0e 100%);
+            border: 2px solid #fef08a;
+            color: #fffbeb;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.9);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.4);
+        }
+
+        .btn-medieval:active:not(:disabled) {
+            transform: scale(0.97);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.8);
+        }
+
+        .btn-medieval:disabled {
+            background: #382d26;
+            border-color: #574a41;
+            color: #786a60;
+            opacity: 0.5;
+            box-shadow: none;
+        }
+
+        .btn-medieval-green {
+            background: linear-gradient(180deg, #16a34a 0%, #14532d 100%);
+            border-color: #86efac;
+        }
+
+        .btn-medieval-red {
+            background: linear-gradient(180deg, #dc2626 0%, #7f1d1d 100%);
+            border-color: #fca5a5;
+        }
+
+        .dice {
+            width: 58px;
+            height: 58px;
+            position: relative;
+            border-radius: 12px;
+            background: radial-gradient(circle at 30% 30%, #ffffff, #ded0b6);
+            border: 2px solid #6b3e19;
+            box-shadow: inset 0 0 6px rgba(100, 50, 10, 0.4), 0 5px 12px rgba(0,0,0,0.6);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 5px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        @media (min-width: 380px) {
+            .dice {
+                width: 66px;
+                height: 66px;
+                padding: 6px;
+            }
+        }
+
+        .pip {
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle at 30% 30%, #eab308, #451a03);
+            border-radius: 50%;
+            justify-self: center;
+            align-self: center;
+            box-shadow: inset 0 1px 1px rgba(0,0,0,0.8);
+        }
+
+        @media (min-width: 380px) {
+            .pip {
+                width: 12px;
+                height: 12px;
+            }
+        }
+
+        .dice.selected {
+            background: radial-gradient(circle at 30% 30%, #fef08a, #f59e0b);
+            border: 3px solid #b45309;
+            transform: translateY(-6px) scale(1.05);
+            box-shadow: 0 8px 18px rgba(245, 158, 11, 0.6), inset 0 0 8px #d97706;
+        }
+
+        .dice.held {
+            background: radial-gradient(circle at 30% 30%, #9ca3af, #374151);
+            border: 2px solid #1f2937;
+            opacity: 0.55;
+            transform: scale(0.95);
+        }
+
+        .dice.rolling {
+            animation: mobileRoll 0.5s ease-out;
+        }
+
+        @keyframes mobileRoll {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.15) translateY(-10px); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between max-w-md mx-auto relative select-none">
+
+    <!-- Top Navigation -->
+    <header class="w-full bg-wood-900 border-b-2 border-amber-900/60 p-2.5 px-3 flex justify-between items-center z-20 shadow-lg">
+        <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-dice-d20 text-amber-500 text-2xl"></i>
+            <div>
+                <h1 class="text-lg font-black font-cinzel text-amber-400 tracking-wider leading-tight">FARKLE</h1>
+                <p id="modeSubTitle" class="text-[10px] text-amber-200/60 leading-none">Online Taverne</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <button id="soundToggleBtn" onclick="toggleSound()" class="w-9 h-9 wood-panel rounded-lg flex items-center justify-center text-amber-300 active:scale-95">
+                <i class="fa-solid fa-volume-high text-sm" id="soundIcon"></i>
+            </button>
+            <button onclick="openModal('rulesModal')" class="w-9 h-9 btn-medieval rounded-lg flex items-center justify-center text-sm font-bold">
+                <i class="fa-solid fa-book-open"></i>
+            </button>
+            <button onclick="showLobbyMenu()" class="w-9 h-9 wood-panel rounded-lg flex items-center justify-center text-amber-300 active:scale-95" title="Hauptmenü">
+                <i class="fa-solid fa-house text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Dynamic Content / Game UI -->
+    <main class="flex-1 flex flex-col justify-between p-2.5 my-auto relative z-10 w-full">
+        
+        <!-- LOBBY SCREEN -->
+        <div id="lobbyScreen" class="flex flex-col justify-center items-center h-full space-y-4 py-4">
+            <div class="parchment-card rounded-2xl p-5 w-full text-center space-y-4 shadow-xl">
+                <i class="fa-solid fa-beer-mug-empty text-4xl text-amber-900 mb-1"></i>
+                <h2 class="text-xl font-black font-cinzel text-amber-950">Wähle deinen Weg</h2>
+                
+                <div class="space-y-3 pt-2">
+                    <div>
+                        <label class="block text-xs font-bold text-amber-900 mb-1 text-left">Dein Tavernen-Name:</label>
+                        <input type="text" id="playerNameInput" value="Reisender" maxlength="12" class="w-full bg-amber-100 border-2 border-amber-800 rounded-xl p-2.5 font-bold text-amber-950 text-center text-sm">
+                    </div>
+
+                    <button onclick="startLocalMode()" class="btn-medieval w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-robot"></i>
+                        <span>Gegen KI / Solo spielen</span>
+                    </button>
+
+                    <div class="border-t border-amber-900/30 pt-3">
+                        <button onclick="createOnlineRoom()" class="btn-medieval btn-medieval-green w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 mb-2">
+                            <i class="fa-solid fa-key"></i>
+                            <span>Online-Raum erstellen</span>
+                        </button>
+                        
+                        <div class="flex gap-2">
+                            <input type="text" id="roomCodeInput" placeholder="Raum-Code" class="w-2/3 bg-amber-100 border-2 border-amber-800 rounded-xl p-2.5 font-bold text-amber-950 uppercase text-center text-xs tracking-wider">
+                            <button onclick="joinOnlineRoom()" class="btn-medieval w-1/3 py-2.5 rounded-xl text-xs font-bold">Beitreten</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WAITING FOR OPPONENT SCREEN -->
+        <div id="waitingScreen" class="hidden flex flex-col justify-center items-center h-full space-y-4 text-center py-6">
+            <div class="parchment-card rounded-2xl p-6 w-full space-y-4 shadow-xl">
+                <i class="fa-solid fa-hourglass-half text-4xl text-amber-900 animate-spin"></i>
+                <h2 class="text-xl font-black font-cinzel text-amber-950">Warte auf Mitspieler...</h2>
+                <p class="text-xs text-amber-900">Teile diesen Raum-Code mit deinem Mitspieler:</p>
+                
+                <div class="bg-amber-950 text-amber-400 font-black font-cinzel text-2xl py-3 rounded-xl tracking-widest border border-amber-500" id="displayRoomCode">
+                    ----
+                </div>
+                
+                <button onclick="copyRoomCode()" class="btn-medieval w-full py-2.5 rounded-xl text-xs font-bold">
+                    <i class="fa-solid fa-copy mr-1"></i> Code kopieren
+                </button>
+                <button onclick="showLobbyMenu()" class="text-xs text-amber-900 underline pt-2 block w-full">Abbrechen</button>
+            </div>
+        </div>
+
+        <!-- GAME BOARD CONTAINER -->
+        <div id="gameScreen" class="hidden flex-1 flex flex-col justify-between">
+            <!-- Scoreboard -->
+            <div class="grid grid-cols-2 gap-2 mb-2">
+                <div id="p1Card" class="parchment-card rounded-xl p-2.5 transition-all border-2 border-amber-600">
+                    <div class="flex justify-between items-start mb-1">
+                        <div>
+                            <h2 id="p1Name" class="font-bold text-xs text-amber-950 truncate max-w-[80px]">Spieler 1</h2>
+                            <span id="p1Status" class="text-[9px] bg-amber-900/20 px-1.5 py-0.5 rounded font-bold uppercase text-amber-900">Am Zug</span>
+                        </div>
+                        <i class="fa-solid fa-helmet-safety text-amber-900 text-sm mt-0.5"></i>
+                    </div>
+                    <div class="text-right">
+                        <div id="p1Score" class="text-xl font-black font-cinzel text-amber-950 leading-none">0</div>
+                        <div class="text-[9px] text-amber-800 font-semibold uppercase">Gesamt</div>
+                    </div>
+                </div>
+
+                <div id="p2Card" class="parchment-card rounded-xl p-2.5 transition-all opacity-60 border-2 border-transparent">
+                    <div class="flex justify-between items-start mb-1">
+                        <div>
+                            <h2 id="p2Name" class="font-bold text-xs text-amber-950 truncate max-w-[80px]">Gegner</h2>
+                            <span id="p2Status" class="text-[9px] bg-amber-900/20 px-1.5 py-0.5 rounded font-bold uppercase text-amber-900">Wartet</span>
+                        </div>
+                        <i id="p2Icon" class="fa-solid fa-shield-halved text-amber-900 text-sm mt-0.5"></i>
+                    </div>
+                    <div class="text-right">
+                        <div id="p2Score" class="text-xl font-black font-cinzel text-amber-950 leading-none">0</div>
+                        <div class="text-[9px] text-amber-800 font-semibold uppercase">Gesamt</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dice Table Area -->
+            <div class="wood-panel rounded-2xl p-3 flex-1 flex flex-col justify-around items-center relative my-1 min-h-[280px]">
+                
+                <div id="statusBanner" class="w-full bg-amber-950/90 border border-amber-600/50 rounded-lg p-1.5 text-center transition-all">
+                    <p id="statusBannerText" class="text-xs italic text-amber-200">"Möge das Würfelglück mit dir sein!"</p>
+                </div>
+
+                <div id="farkleBanner" class="hidden absolute inset-0 bg-black/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center rounded-2xl p-4 text-center">
+                    <h2 class="text-5xl font-black font-cinzel text-red-600 tracking-widest animate-bounce mb-1">FARKLE!</h2>
+                    <p class="text-amber-200 text-sm font-serif">Keine Punkte in diesem Wurf!</p>
+                    <p class="text-xs text-amber-400/80 mt-2">Zug wechselt...</p>
+                </div>
+
+                <div id="hotDiceBanner" class="hidden absolute top-3 bg-amber-600 text-amber-950 border border-amber-300 px-4 py-1 rounded-full z-20 font-bold text-xs shadow-lg animate-pulse">
+                    <i class="fa-solid fa-fire mr-1 text-red-800"></i> HOT DICE! Alle 6 gewertet!
+                </div>
+
+                <div class="w-full flex justify-around items-center my-1">
+                    <div class="text-center">
+                        <span class="text-[10px] text-amber-400/80 uppercase block">Gewählt</span>
+                        <span id="selectedDiceScore" class="text-lg font-bold font-cinzel text-amber-300">+0</span>
+                    </div>
+                    <div class="bg-amber-950/90 border-2 border-amber-500 px-5 py-1.5 rounded-xl shadow-inner text-center">
+                        <span class="text-[10px] text-amber-300 uppercase block tracking-wider">Rundenpunkte</span>
+                        <span id="accumulatedTurnScore" class="text-2xl font-black font-cinzel text-amber-400">0</span>
+                    </div>
+                    <div class="text-center max-w-[80px]">
+                        <span class="text-[10px] text-amber-400/80 uppercase block">Kombi</span>
+                        <span id="comboName" class="text-[10px] font-bold text-amber-200 block truncate">-</span>
+                    </div>
+                </div>
+
+                <div id="diceBoard" class="grid grid-cols-3 gap-3 my-2">
+                    <!-- 6 Dice injected by JS -->
+                </div>
+
+                <p class="text-[10px] text-amber-300/60 text-center px-2">
+                    Tippe auf Wertungswürfel (1, 5, Mehrlinge).
+                </p>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button id="rollBtn" onclick="rollDiceAction()" class="btn-medieval btn-medieval-green py-3.5 rounded-xl text-base font-black tracking-wide flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-dice text-xl"></i>
+                    <span>WÜRFELN</span>
+                </button>
+
+                <button id="bankBtn" onclick="bankPointsAction()" class="btn-medieval py-3.5 rounded-xl text-base font-black tracking-wide flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-coins text-xl text-amber-300"></i>
+                    <span>SICHERN</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Rules Modal -->
+    <div id="rulesModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3">
+        <div class="parchment-card max-w-sm w-full max-h-[85vh] rounded-2xl flex flex-col p-4 relative">
+            <button onclick="closeModal('rulesModal')" class="absolute top-3 right-3 text-amber-950 text-xl font-bold p-1">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2 class="text-xl font-black font-cinzel text-amber-950 border-b border-amber-900/30 pb-2 mb-3 text-center">
+                <i class="fa-solid fa-scroll mr-1"></i> Farkle Regeln
+            </h2>
+            <div class="overflow-y-auto text-amber-950 space-y-2 text-xs pr-1">
+                <p><strong>Ziel:</strong> Sammele als Erstes 10.000 Punkte.</p>
+                <div class="bg-amber-900/10 p-2 rounded border border-amber-900/20">
+                    <p class="font-bold border-b border-amber-900/20 pb-0.5 mb-1">Punktekombinationen:</p>
+                    <ul class="space-y-0.5 text-[11px]">
+                        <li>• <strong>Einzelne 1:</strong> 100 Pkt</li>
+                        <li>• <strong>Einzelne 5:</strong> 50 Pkt</li>
+                        <li>• <strong>Drei 1er:</strong> 1.000 Pkt</li>
+                        <li>• <strong>Drei 2er-6er:</strong> Augenzahl x 100 Pkt</li>
+                        <li>• <strong>4er / 5er / 6er-Linge:</strong> 1.000 / 2.000 / 3.000 Pkt</li>
+                        <li>• <strong>Straße (1-6):</strong> 1.500 Pkt</li>
+                    </ul>
+                </div>
+            </div>
+            <button onclick="closeModal('rulesModal')" class="btn-medieval w-full py-2.5 mt-3 rounded-xl text-xs font-bold">Verstanden</button>
+        </div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div id="victoryModal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="parchment-card max-w-sm w-full rounded-2xl p-6 text-center relative border-4 border-amber-500">
+            <i class="fa-solid fa-trophy text-5xl text-amber-600 mb-3 animate-bounce"></i>
+            <h2 id="winnerTitle" class="text-2xl font-black font-cinzel text-amber-950 mb-1">SIEG!</h2>
+            <p id="winnerDesc" class="text-amber-900 text-xs mb-4">Spieler 1 erobert die Taverne!</p>
+            <button onclick="showLobbyMenu(); closeModal('victoryModal');" class="btn-medieval btn-medieval-green w-full py-3 rounded-xl text-sm font-bold">
+                Zurück zur Lobby
+            </button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'taverne-farkle-default';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+
+        async function initFirebase() {
+            try {
+                if (Object.keys(firebaseConfig).length > 0) {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    currentUser = auth.currentUser;
+                }
+            } catch (err) {
+                console.warn("Firebase Init Hinweis:", err);
+            }
+        }
+        initFirebase();
+
+        window.fbManager = {
+            createRoom: async function(roomCode, initialData) {
+                if (!db) return alert("Firebase nicht verfügbar. Nutze den Solo-Modus.");
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms_' + roomCode);
+                    await setDoc(docRef, initialData);
+                } catch (e) {
+                    console.error("Fehler beim Erstellen:", e);
+                }
+            },
+            updateRoom: async function(roomCode, data) {
+                if (!db) return;
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms_' + roomCode);
+                    await updateDoc(docRef, data);
+                } catch (e) {
+                    console.error("Fehler beim Aktualisieren:", e);
+                }
+            },
+            getRoom: async function(roomCode) {
+                if (!db) return null;
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms_' + roomCode);
+                const snap = await getDoc(docRef);
+                return snap.exists() ? snap.data() : null;
+            },
+            subscribeRoom: function(roomCode, callback) {
+                if (!db) return () => {};
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms_' + roomCode);
+                return onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        callback(docSnap.data());
+                    }
+                }, (err) => {
+                    console.error("Snapshot error:", err);
+                });
+            },
+            getUid: () => currentUser ? currentUser.uid : 'anon_' + Math.random()
+        };
+    </script>
+
+    <!-- Audio & Game Logic -->
+    <script>
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+            }
+            playDiceRoll() {
+                if (!this.enabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                for (let i = 0; i < 8; i++) {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(200 + Math.random() * 250, now + i * 0.04);
+                    gain.gain.setValueAtTime(0.2, now + i * 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.04 + 0.03);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.04);
+                    osc.stop(now + i * 0.04 + 0.03);
+                }
+            }
+            playCoinBank() {
+                if (!this.enabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                [987.77, 1318.51].forEach((f, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(f, now + idx * 0.06);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.06);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.25);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.06);
+                    osc.stop(now + idx * 0.06 + 0.25);
+                });
+            }
+            playFarkle() {
+                if (!this.enabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(130, now + 0.4);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.45);
+            }
+            playClick() {
+                if (!this.enabled) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(500, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.02);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.02);
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        function toggleSound() {
+            sound.enabled = !sound.enabled;
+            document.getElementById('soundIcon').className = sound.enabled ? 
+                "fa-solid fa-volume-high text-sm" : "fa-solid fa-volume-xmark text-sm text-red-400";
+        }
+
+        /* App State */
+        const gameState = {
+            gameMode: 'solo', // 'solo' or 'online'
+            roomCode: null,
+            playerRole: 1, // 1 or 2
+            unsubscribeFn: null,
+
+            currentPlayer: 1,
+            scores: { 1: 0, 2: 0 },
+            names: { 1: 'Spieler 1', 2: 'Gegner' },
+            turnScore: 0,
+            diceValues: [1, 1, 1, 1, 1, 1],
+            diceHeld: [false, false, false, false, false, false],
+            diceSelected: [false, false, false, false, false, false],
+            isRolling: false,
+            gameOver: false
+        };
+
+        function showLobbyMenu() {
+            if (gameState.unsubscribeFn) gameState.unsubscribeFn();
+            document.getElementById('lobbyScreen').classList.remove('hidden');
+            document.getElementById('waitingScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('modeSubTitle').innerText = "Online Taverne";
+        }
+
+        async function startLocalMode() {
+            const name = document.getElementById('playerNameInput').value.trim() || "Reisender";
+            gameState.gameMode = 'solo';
+            gameState.names[1] = name;
+            gameState.names[2] = "KI Gegner";
+            gameState.playerRole = 1;
+            
+            resetBoardState();
+            document.getElementById('lobbyScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            document.getElementById('modeSubTitle').innerText = "Solo vs KI";
+            renderDice();
+        }
+
+        async function createOnlineRoom() {
+            const name = document.getElementById('playerNameInput').value.trim() || "Wirt";
+            const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+            gameState.gameMode = 'online';
+            gameState.roomCode = code;
+            gameState.playerRole = 1;
+            gameState.names[1] = name;
+            gameState.names[2] = "Wartet...";
+
+            const initialRoomData = {
+                hostName: name,
+                guestName: "",
+                status: "waiting", // waiting, playing, finished
+                currentPlayer: 1,
+                scores: { 1: 0, 2: 0 },
+                turnScore: 0,
+                diceValues: [1, 1, 1, 1, 1, 1],
+                diceHeld: [false, false, false, false, false, false],
+                winner: 0,
+                lastAction: "Raum erstellt"
+            };
+
+            document.getElementById('lobbyScreen').classList.add('hidden');
+            document.getElementById('waitingScreen').classList.remove('hidden');
+            document.getElementById('displayRoomCode').innerText = code;
+
+            if (window.fbManager) {
+                await window.fbManager.createRoom(code, initialRoomData);
+                gameState.unsubscribeFn = window.fbManager.subscribeRoom(code, handleRemoteRoomUpdate);
+            }
+        }
+
+        async function joinOnlineRoom() {
+            const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            const name = document.getElementById('playerNameInput').value.trim() || "Gast";
+            if (!code || code.length < 4) {
+                alert("Bitte gültigen Raum-Code eingeben.");
+                return;
+            }
+
+            if (!window.fbManager) {
+                alert("Firebase nicht verbunden.");
+                return;
+            }
+
+            const roomData = await window.fbManager.getRoom(code);
+            if (!roomData) {
+                alert("Raum nicht gefunden!");
+                return;
+            }
+
+            gameState.gameMode = 'online';
+            gameState.roomCode = code;
+            gameState.playerRole = 2;
+            gameState.names[1] = roomData.hostName;
+            gameState.names[2] = name;
+
+            await window.fbManager.updateRoom(code, {
+                guestName: name,
+                status: "playing",
+                lastAction: `${name} ist beigetreten!`
+            });
+
+            document.getElementById('lobbyScreen').classList.add('hidden');
+            document.getElementById('waitingScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            document.getElementById('modeSubTitle').innerText = `Raum: ${code}`;
+
+            gameState.unsubscribeFn = window.fbManager.subscribeRoom(code, handleRemoteRoomUpdate);
+        }
+
+        function copyRoomCode() {
+            const code = document.getElementById('displayRoomCode').innerText;
+            navigator.clipboard.writeText(code);
+            alert("Raum-Code in Zwischenablage kopiert!");
+        }
+
+        function handleRemoteRoomUpdate(data) {
+            if (!data) return;
+
+            if (gameState.playerRole === 1 && data.status === "playing" && document.getElementById('waitingScreen').classList.contains('hidden') === false) {
+                document.getElementById('waitingScreen').classList.add('hidden');
+                document.getElementById('gameScreen').classList.remove('hidden');
+                document.getElementById('modeSubTitle').innerText = `Raum: ${gameState.roomCode}`;
+            }
+
+            gameState.names[1] = data.hostName || "Spieler 1";
+            gameState.names[2] = data.guestName || "Wartet...";
+            gameState.currentPlayer = data.currentPlayer;
+            gameState.scores = data.scores;
+            gameState.turnScore = data.turnScore;
+            gameState.diceValues = data.diceValues;
+            gameState.diceHeld = data.diceHeld;
+
+            document.getElementById('p1Name').innerText = gameState.names[1];
+            document.getElementById('p2Name').innerText = gameState.names[2];
+
+            if (data.winner && data.winner > 0) {
+                triggerVictory(data.winner);
+            }
+
+            renderDice();
+        }
+
+        function resetBoardState() {
+            gameState.currentPlayer = 1;
+            gameState.scores = { 1: 0, 2: 0 };
+            gameState.turnScore = 0;
+            gameState.diceHeld = [false, false, false, false, false, false];
+            gameState.diceSelected = [false, false, false, false, false, false];
+            gameState.diceValues = [1, 2, 3, 4, 5, 6];
+            gameState.gameOver = false;
+        }
+
+        function calculateDiceScore(diceArray) {
+            if (!diceArray || diceArray.length === 0) return { score: 0, countUsed: 0, comboName: '' };
+            const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+            diceArray.forEach(val => counts[val]++);
+
+            let score = 0, countUsed = 0;
+            let comboParts = [];
+            const totalDice = diceArray.length;
+
+            if (totalDice === 6 && Object.values(counts).every(c => c === 1)) {
+                return { score: 1500, countUsed: 6, comboName: 'Straße (1-6)' };
+            }
+            if (totalDice === 6 && Object.values(counts).filter(c => c === 2).length === 3) {
+                return { score: 1500, countUsed: 6, comboName: 'Drei Paare' };
+            }
+
+            for (let num = 1; num <= 6; num++) {
+                const count = counts[num];
+                if (count === 6) { score += 3000; countUsed += 6; comboParts.push(`6x ${num}`); }
+                else if (count === 5) { score += 2000; countUsed += 5; comboParts.push(`5x ${num}`); }
+                else if (count === 4) { score += 1000; countUsed += 4; comboParts.push(`4x ${num}`); }
+                else if (count === 3) {
+                    score += (num === 1) ? 1000 : num * 100;
+                    countUsed += 3;
+                    comboParts.push(`3x ${num}`);
+                } else {
+                    if (num === 1) { score += count * 100; countUsed += count; if (count) comboParts.push(`${count}x 1`); }
+                    else if (num === 5) { score += count * 50; countUsed += count; if (count) comboParts.push(`${count}x 5`); }
+                }
+            }
+
+            return { score, countUsed, comboName: comboParts.length > 0 ? comboParts.join(', ') : 'Keine Punkte' };
+        }
+
+        function hasAnyScoringDice(diceArray) {
+            if (!diceArray || diceArray.length === 0) return false;
+            return calculateDiceScore(diceArray).score > 0 || diceArray.includes(1) || diceArray.includes(5);
+        }
+
+        function renderDice() {
+            const diceBoard = document.getElementById('diceBoard');
+            diceBoard.innerHTML = '';
+
+            for (let i = 0; i < 6; i++) {
+                const isHeld = gameState.diceHeld[i];
+                const isSelected = gameState.diceSelected[i];
+                const val = gameState.diceValues[i];
+
+                const diceElem = document.createElement('div');
+                diceElem.className = `dice ${isHeld ? 'held' : ''} ${isSelected ? 'selected' : ''}`;
+                diceElem.onclick = () => toggleDiceSelection(i);
+
+                const pipsLayout = getPipsLayout(val);
+                for (let pos = 1; pos <= 9; pos++) {
+                    const pipCell = document.createElement('div');
+                    if (pipsLayout.includes(pos)) pipCell.className = 'pip';
+                    diceElem.appendChild(pipCell);
+                }
+                diceBoard.appendChild(diceElem);
+            }
+
+            updateScoresUI();
+        }
+
+        function getPipsLayout(value) {
+            switch (value) {
+                case 1: return [5];
+                case 2: return [1, 9];
+                case 3: return [1, 5, 9];
+                case 4: return [1, 3, 7, 9];
+                case 5: return [1, 3, 5, 7, 9];
+                case 6: return [1, 3, 4, 6, 7, 9];
+                default: return [];
+            }
+        }
+
+        function updateScoresUI() {
+            const selectedVals = [];
+            for (let i = 0; i < 6; i++) {
+                if (gameState.diceSelected[i] && !gameState.diceHeld[i]) selectedVals.push(gameState.diceValues[i]);
+            }
+
+            const selEval = calculateDiceScore(selectedVals);
+            const isSelValid = selEval.score > 0 && selEval.countUsed === selectedVals.length;
+
+            document.getElementById('selectedDiceScore').innerText = `+${selEval.score}`;
+            document.getElementById('accumulatedTurnScore').innerText = gameState.turnScore + (isSelValid ? selEval.score : 0);
+            document.getElementById('comboName').innerText = selEval.comboName || '-';
+
+            document.getElementById('p1Score').innerText = gameState.scores[1].toLocaleString();
+            document.getElementById('p2Score').innerText = gameState.scores[2].toLocaleString();
+
+            const p1Card = document.getElementById('p1Card');
+            const p2Card = document.getElementById('p2Card');
+
+            if (gameState.currentPlayer === 1) {
+                p1Card.classList.remove('opacity-60', 'border-transparent');
+                p1Card.classList.add('border-amber-600');
+                p2Card.classList.add('opacity-60', 'border-transparent');
+                p2Card.classList.remove('border-amber-600');
+                document.getElementById('p1Status').innerText = "Am Zug";
+                document.getElementById('p2Status').innerText = "Wartet";
+            } else {
+                p2Card.classList.remove('opacity-60', 'border-transparent');
+                p2Card.classList.add('border-amber-600');
+                p1Card.classList.add('opacity-60', 'border-transparent');
+                p1Card.classList.remove('border-amber-600');
+                document.getElementById('p2Status').innerText = "Am Zug";
+                document.getElementById('p1Status').innerText = "Wartet";
+            }
+
+            const rollBtn = document.getElementById('rollBtn');
+            const bankBtn = document.getElementById('bankBtn');
+
+            const isMyTurn = (gameState.gameMode === 'solo' && gameState.currentPlayer === 1) || 
+                             (gameState.gameMode === 'online' && gameState.currentPlayer === gameState.playerRole);
+
+            if (!isMyTurn || gameState.gameOver) {
+                rollBtn.disabled = true;
+                bankBtn.disabled = true;
+                return;
+            }
+
+            const countSelected = gameState.diceSelected.filter((s, idx) => s && !gameState.diceHeld[idx]).length;
+            rollBtn.disabled = !(countSelected > 0 && isSelValid) && !gameState.diceHeld.every(h => !h);
+            bankBtn.disabled = !((countSelected > 0 && isSelValid) || gameState.turnScore > 0);
+        }
+
+        function toggleDiceSelection(index) {
+            const isMyTurn = (gameState.gameMode === 'solo' && gameState.currentPlayer === 1) || 
+                             (gameState.gameMode === 'online' && gameState.currentPlayer === gameState.playerRole);
+            if (!isMyTurn || gameState.isRolling || gameState.diceHeld[index] || gameState.gameOver) return;
+
+            sound.playClick();
+            gameState.diceSelected[index] = !gameState.diceSelected[index];
+            renderDice();
+        }
+
+        async function rollDiceAction() {
+            if (gameState.isRolling || gameState.gameOver) return;
+
+            const selectedIndices = [];
+            const selectedVals = [];
+            for (let i = 0; i < 6; i++) {
+                if (gameState.diceSelected[i] && !gameState.diceHeld[i]) {
+                    selectedIndices.push(i);
+                    selectedVals.push(gameState.diceValues[i]);
+                }
+            }
+
+            if (selectedVals.length > 0) {
+                const evalRes = calculateDiceScore(selectedVals);
+                if (evalRes.score === 0 || evalRes.countUsed !== selectedVals.length) return;
+
+                selectedIndices.forEach(idx => {
+                    gameState.diceHeld[idx] = true;
+                    gameState.diceSelected[idx] = false;
+                });
+                gameState.turnScore += evalRes.score;
+            }
+
+            if (gameState.diceHeld.every(h => h)) {
+                gameState.diceHeld = [false, false, false, false, false, false];
+                showHotDiceBanner();
+            }
+
+            gameState.isRolling = true;
+            sound.playDiceRoll();
+
+            const diceElems = document.querySelectorAll('.dice');
+            diceElems.forEach((d, idx) => {
+                if (!gameState.diceHeld[idx]) d.classList.add('rolling');
+            });
+
+            setTimeout(async () => {
+                for (let i = 0; i < 6; i++) {
+                    if (!gameState.diceHeld[i]) {
+                        gameState.diceValues[i] = Math.floor(Math.random() * 6) + 1;
+                    }
+                }
+                diceElems.forEach(d => d.classList.remove('rolling'));
+                gameState.isRolling = false;
+                renderDice();
+
+                checkTurnFarkle();
+
+                if (gameState.gameMode === 'online') {
+                    await window.fbManager.updateRoom(gameState.roomCode, {
+                        diceValues: gameState.diceValues,
+                        diceHeld: gameState.diceHeld,
+                        turnScore: gameState.turnScore
+                    });
+                }
+            }, 500);
+        }
+
+        async function checkTurnFarkle() {
+            const activeDiceVals = [];
+            for (let i = 0; i < 6; i++) {
+                if (!gameState.diceHeld[i]) activeDiceVals.push(gameState.diceValues[i]);
+            }
+
+            if (!hasAnyScoringDice(activeDiceVals)) {
+                sound.playFarkle();
+                showFarkleBanner();
+                gameState.turnScore = 0;
+
+                setTimeout(async () => {
+                    hideFarkleBanner();
+                    endTurn();
+                }, 2000);
+            }
+        }
+
+        async function bankPointsAction() {
+            if (gameState.isRolling || gameState.gameOver) return;
+
+            const selectedVals = [];
+            for (let i = 0; i < 6; i++) {
+                if (gameState.diceSelected[i] && !gameState.diceHeld[i]) selectedVals.push(gameState.diceValues[i]);
+            }
+
+            if (selectedVals.length > 0) {
+                const evalRes = calculateDiceScore(selectedVals);
+                if (evalRes.score > 0 && evalRes.countUsed === selectedVals.length) {
+                    gameState.turnScore += evalRes.score;
+                }
+            }
+
+            if (gameState.turnScore === 0) return;
+
+            sound.playCoinBank();
+            gameState.scores[gameState.currentPlayer] += gameState.turnScore;
+
+            if (gameState.scores[gameState.currentPlayer] >= 10000) {
+                triggerVictory(gameState.currentPlayer);
+                if (gameState.gameMode === 'online') {
+                    await window.fbManager.updateRoom(gameState.roomCode, { winner: gameState.currentPlayer, scores: gameState.scores });
+                }
+                return;
+            }
+
+            endTurn();
+        }
+
+        async function endTurn() {
+            gameState.turnScore = 0;
+            gameState.diceHeld = [false, false, false, false, false, false];
+            gameState.diceSelected = [false, false, false, false, false, false];
+            gameState.currentPlayer = gameState.currentPlayer === 1 ? 2 : 1;
+
+            for (let i = 0; i < 6; i++) {
+                gameState.diceValues[i] = Math.floor(Math.random() * 6) + 1;
+            }
+
+            renderDice();
+
+            if (gameState.gameMode === 'online') {
+                await window.fbManager.updateRoom(gameState.roomCode, {
+                    currentPlayer: gameState.currentPlayer,
+                    scores: gameState.scores,
+                    turnScore: 0,
+                    diceHeld: gameState.diceHeld,
+                    diceValues: gameState.diceValues
+                });
+            } else if (gameState.gameMode === 'solo' && gameState.currentPlayer === 2) {
+                setTimeout(runAITurn, 900);
+            }
+        }
+
+        function runAITurn() {
+            if (gameState.currentPlayer !== 2 || gameState.gameOver) return;
+            
+            setTimeout(() => {
+                sound.playDiceRoll();
+                for (let i = 0; i < 6; i++) gameState.diceValues[i] = Math.floor(Math.random() * 6) + 1;
+                renderDice();
+
+                const activeVals = [...gameState.diceValues];
+                if (!hasAnyScoringDice(activeVals)) {
+                    sound.playFarkle();
+                    showFarkleBanner();
+                    setTimeout(() => { hideFarkleBanner(); endTurn(); }, 2000);
+                } else {
+                    setTimeout(() => {
+                        sound.playCoinBank();
+                        gameState.scores[2] += 450; // Simple AI reward
+                        endTurn();
+                    }, 1000);
+                }
+            }, 800);
+        }
+
+        function showFarkleBanner() { document.getElementById('farkleBanner').classList.remove('hidden'); }
+        function hideFarkleBanner() { document.getElementById('farkleBanner').classList.add('hidden'); }
+        function showHotDiceBanner() {
+            const banner = document.getElementById('hotDiceBanner');
+            banner.classList.remove('hidden');
+            setTimeout(() => banner.classList.add('hidden'), 2000);
+        }
+
+        function triggerVictory(winnerPlayer) {
+            gameState.gameOver = true;
+            const winnerName = gameState.names[winnerPlayer];
+            document.getElementById('winnerTitle', winnerPlayer).innerText = `${winnerName.toUpperCase()} SIEGT!`;
+            document.getElementById('winnerDesc').innerText = `${winnerName} erobert die Taverne mit ${gameState.scores[winnerPlayer].toLocaleString()} Punkten!`;
+            openModal('victoryModal');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    </script>
+</body>
+</html>
